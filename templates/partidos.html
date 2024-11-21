@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Partidos</title>
+</head>
+<body>
+    <h1>Lista de Partidos</h1>
+
+    <form method="POST">
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Equipos</th>
+                    <th>Fecha</th>
+                    <th>Hora</th>
+                    <th>Ubicación</th>
+                    <th>Precio General</th>
+                    <th>Precio Preferencial</th>
+                    <th>Precio VIP</th>
+                    <th>Seleccionar</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for partido in partidos %}
+                    <tr>
+                        <td>{{ partido[1] }}</td>
+                        <td>{{ partido[2] }}</td>
+                        <td>{{ partido[3] }}</td>
+                        <td>{{ partido[4] }}</td>
+                        <td>{{ partido[5] }}</td>
+                        <td>{{ partido[6] }}</td>
+                        <td>{{ partido[7] }}</td>
+                        <td>
+                            <input type="radio" name="partido_id" value="{{ partido[0] }}" required>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if es_socio %}
+            <p><strong>Beneficios exclusivos para socios:</strong></p>
+            <ul>
+                <li>Descuentos en entradas del {{ session['descuento'] * 100 }}%.</li>
+                <li>Transporte gratuito a partidos de visitante.</li>
+                <li>Acceso a sorteos exclusivos.</li>
+            </ul>
+        {% endif %}
+
+        <button type="submit">Registrar compra</button>
+    </form>
+</body>
+</html>

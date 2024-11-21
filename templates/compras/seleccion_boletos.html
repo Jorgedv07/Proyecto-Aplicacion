@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selección de Boletos</title>
+</head>
+<body>
+    <h1>Selecciona tu boleto</h1>
+    <form action="/comprar_boletos" method="POST">
+        <label for="partido">Partido:</label>
+        <select name="partido" id="partido">
+            <option value="1">Equipo A vs Equipo B</option>
+            <option value="2">Equipo C vs Equipo D</option>
+        </select>
+        <br>
+        <label for="cantidad">Cantidad:</label>
+        <input type="number" id="cantidad" name="cantidad" min="1" required>
+        <br>
+        <button type="submit">Comprar</button>
+    </form>
+</body>
+</html>

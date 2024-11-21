@@ -1,6 +1,6 @@
 import pymysql
 pymysql.install_as_MySQLdb()
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_mysqldb import MySQL
 
 app = Flask(__name__)
@@ -72,16 +72,23 @@ def delete_contact(id):
 
 # --- Rutas para la tabla de socios ---
 
-@app.route('/registro_socio', methods=['POST'])
+# Ruta para mostrar el formulario de registro de socios
+@app.route('/registro_socio', methods=['GET', 'POST'])
 def registro_socio():
     if request.method == 'POST':
         nombre = request.form['nombre']
         email = request.form['email']
+        # Conexión a la base de datos
         cur = mysql.connection.cursor()
         cur.execute('INSERT INTO socios (nombre, email) VALUES (%s, %s)', (nombre, email))
         mysql.connection.commit()
-        flash('Socio registrado con éxito')
-        return redirect(url_for('Index'))
+        cur.close()
+        session['es_socio'] = True
+        session['descuento'] = 0.3  # Ejemplo de descuento para socios
+        flash('Tu registro como socio ha sido exitoso. ¡Disfruta de los beneficios!')
+        return redirect(url_for('mostrar_partidos'))
+    return render_template('socios/registro.html')  # Mostrar el formulario
+
 
 @app.route('/compra_socio', methods=['POST'])
 def compra_socio():
@@ -137,16 +144,21 @@ def delete_socio(id):
 
 # --- Rutas para la tabla de hinchas ---
 
-@app.route('/registro_hincha', methods=['POST'])
+# Ruta para mostrar el formulario de registro de hinchas
+@app.route('/registro_hincha', methods=['GET', 'POST'])
 def registro_hincha():
     if request.method == 'POST':
         nombre = request.form['nombre']
         email = request.form['email']
+        # Conexión a la base de datos
         cur = mysql.connection.cursor()
         cur.execute('INSERT INTO hinchas (nombre, email) VALUES (%s, %s)', (nombre, email))
         mysql.connection.commit()
-        flash('Hincha registrado con éxito')
-        return redirect(url_for('Index'))
+        cur.close()
+        session['es_socio'] = False
+        flash('Hincha registrado exitosamente')
+        return redirect(url_for('mostrar_partidos'))  # Redirigir a la página principal después de registrar
+    return render_template('hinchas/registroh.html')  # Mostrar el formulario
 
 @app.route('/compra_hincha', methods=['POST'])
 def compra_hincha():
@@ -204,13 +216,42 @@ def delete_hincha(id):
 # --- Rutas CRUD para la tabla de partidos ---
 
 # Ver todos los partidos
-@app.route('/partidos')
-def lista_partidos():
-    cur = mysql.connection.cursor()
-    cur.execute('SELECT * FROM partidos')
-    partidos = cur.fetchall()
-    return render_template('partidos/lista.html', partidos=partidos)
+@app.route('/partidos', methods=['GET', 'POST'])
+def mostrar_partidos():
+    # Verificar si el usuario es socio
+    es_socio = session.get('es_socio', False)
+    
+    # Conexión a la base de datos
+    cursor = mysql.connection.cursor()
 
+    # Obtener todos los partidos disponibles
+    cursor.execute("SELECT id, equipos, fecha, hora, ubicacion, precio_general, precio_preferencial, precio_vip FROM partidos")
+    partidos = cursor.fetchall()
+
+    # Si el formulario es enviado
+    if request.method == 'POST':
+        # Obtener el id del partido seleccionado
+        partido_id = request.form['partido_id']
+        # Obtener el precio de acuerdo al tipo de socio
+        if es_socio:
+            # Obtener el descuento
+            descuento = session.get('descuento', 0)
+            # Guardar la compra en la base de datos, puedes agregar la lógica que desees aquí.
+            cursor.execute("INSERT INTO compras_socios (partido_id, descuento) VALUES (%s, %s)", (partido_id, descuento))
+            mysql.connection.commit()
+
+            # Mostrar mensaje de éxito
+            flash('Compra registrada exitosamente con el descuento para socios.')
+
+        else:
+            # Guardar compra de hincha (sin descuento)
+            cursor.execute("INSERT INTO compras_hinchas (partido_id) VALUES (%s)", (partido_id,))
+            mysql.connection.commit()
+            flash('Compra registrada exitosamente.')
+
+        return redirect(url_for('mostrar_partidos'))  # Redirigir después de la compra
+
+    return render_template('partidos.html', partidos=partidos, es_socio=es_socio)
 # Agregar partido
 @app.route('/add_partido', methods=['POST'])
 def add_partido():
@@ -259,6 +300,17 @@ def delete_partido(id):
     mysql.connection.commit()
     flash('Partido eliminado correctamente')
     return redirect(url_for('lista_partidos'))
+
+# Ruta para comprar boletos (requiere estar registrado)
+@app.route('/comprar_boletos', methods=['GET', 'POST'])
+def comprar_boletos():
+    if request.method == 'POST':
+        partido = request.form['partido']
+        cantidad = request.form['cantidad']
+        # Lógica para guardar la compra en la base de datos
+        flash('Compra realizada exitosamente')
+        return redirect(url_for('Index'))
+    return render_template('compras/seleccion_boletos.html')
 
 
 if __name__ == '__main__':
